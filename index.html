@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>wasm-string</title>
+        <script>
+var the_thing = null;
+function solve_block(results, scramble) {
+
+document.getElementById("log").textContent += new Date();
+document.getElementById("log").textContent += "\n";
+								const encoder = new TextEncoder();
+								let encodedString = encoder.encode(scramble);
+
+                const a = results.instance.exports.stringPrepare(encodedString.length);
+                const b = results.instance.exports.stringData(a);
+
+						    const asBytes = new Uint8Array(results.instance.exports.memory.buffer, b, encodedString.length);
+								asBytes.set(encodedString);
+
+                console.time("transition table");
+                const pointer = results.instance.exports.get_string(a);
+                console.timeEnd("transition table");
+
+                const buffer = new Uint8Array(
+                    results.instance.exports.memory.buffer,
+                    pointer,
+                    results.instance.exports.get_len()
+                );
+                //console.log(String.fromCharCode(...buffer))
+document.getElementById("log").textContent += String.fromCharCode(...buffer);
+document.getElementById("log").textContent += "\n";
+document.getElementById("log").textContent += new Date();
+document.getElementById("log").textContent += "\n";
+}
+            fetch('rss_wasm.wasm').then(response =>
+                response.arrayBuffer()
+            ).then(bytes =>
+                WebAssembly.instantiate(bytes,  {env: {
+        log_j: (num) => document.getElementById("log").textContent += "Depth " + num + "\n",
+      }})
+            ).then(results => {
+              the_thing = results;
+            });
+        </script>
+    </head>
+<body>
+<input type="text" size="100" id="scramble"></input>
+<input type="button" value="Solve DL" onclick="document.getElementById('log').textContent='';solve_block(the_thing, document.getElementById('scramble').value)"></input>
+<br />
+<textarea rows="10" cols="80" id="log"></textarea>
+</body>
+</html>
