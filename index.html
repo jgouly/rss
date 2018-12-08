@@ -9,25 +9,25 @@ function solve_block(results, scramble) {
 
 document.getElementById("log").textContent += new Date();
 document.getElementById("log").textContent += "\n";
-								const encoder = new TextEncoder();
-								let encodedString = encoder.encode(scramble);
+ 		const encoder = new TextEncoder();
+ 		let encodedString = encoder.encode(scramble);
 
-                const a = results.instance.exports.stringPrepare(encodedString.length);
-                const b = results.instance.exports.stringData(a);
+     const a = results.instance.exports.stringPrepare(encodedString.length);
+     const b = results.instance.exports.stringData(a);
 
-						    const asBytes = new Uint8Array(results.instance.exports.memory.buffer, b, encodedString.length);
-								asBytes.set(encodedString);
+     const asBytes = new Uint8Array(results.instance.exports.memory.buffer, b, encodedString.length);
+ 		asBytes.set(encodedString);
 
-                console.time("transition table");
-                const pointer = results.instance.exports.get_string(a);
-                console.timeEnd("transition table");
+     console.time("transition table");
+     const pointer = results.instance.exports.get_string(a);
+     console.timeEnd("transition table");
 
-                const buffer = new Uint8Array(
-                    results.instance.exports.memory.buffer,
-                    pointer,
-                    results.instance.exports.get_len()
-                );
-                //console.log(String.fromCharCode(...buffer))
+     const buffer = new Uint8Array(
+         results.instance.exports.memory.buffer,
+         pointer,
+         results.instance.exports.get_len()
+     );
+     //console.log(String.fromCharCode(...buffer))
 document.getElementById("log").textContent += String.fromCharCode(...buffer);
 document.getElementById("log").textContent += "\n";
 document.getElementById("log").textContent += new Date();
@@ -38,6 +38,7 @@ document.getElementById("log").textContent += "\n";
             ).then(bytes =>
                 WebAssembly.instantiate(bytes,  {env: {
         log_j: (num) => document.getElementById("log").textContent += "Depth " + num + "\n",
+        log_str: (str) => document.getElementById("log").textContent += str + "\n",
       }})
             ).then(results => {
               the_thing = results;
