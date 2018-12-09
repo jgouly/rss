@@ -29,7 +29,7 @@
                self.postMessage(String.fromCharCode(...buffer));
                self.postMessage("\n" + new Date() + "\n");
           }
-          var wasm_file = 'rss_wasm.wasm';
+          var wasm_file = 'https://jgouly.github.io/rss/rss_wasm.wasm';
           fetch(wasm_file).then(response =>
                           response.arrayBuffer()
                       ).then(bytes =>
