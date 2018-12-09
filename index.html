@@ -3,52 +3,73 @@
     <head>
         <meta charset="utf-8">
         <title>wasm-string</title>
-        <script>
-var the_thing = null;
-function solve_block(results, scramble) {
-
-document.getElementById("log").textContent += new Date();
-document.getElementById("log").textContent += "\n";
- 		const encoder = new TextEncoder();
- 		let encodedString = encoder.encode(scramble);
-
-     const a = results.instance.exports.stringPrepare(encodedString.length);
-     const b = results.instance.exports.stringData(a);
-
-     const asBytes = new Uint8Array(results.instance.exports.memory.buffer, b, encodedString.length);
- 		asBytes.set(encodedString);
-
-     console.time("transition table");
-     const pointer = results.instance.exports.get_string(a);
-     console.timeEnd("transition table");
-
-     const buffer = new Uint8Array(
-         results.instance.exports.memory.buffer,
-         pointer,
-         results.instance.exports.get_len()
-     );
-     //console.log(String.fromCharCode(...buffer))
-document.getElementById("log").textContent += String.fromCharCode(...buffer);
-document.getElementById("log").textContent += "\n";
-document.getElementById("log").textContent += new Date();
-document.getElementById("log").textContent += "\n";
-}
-            fetch('rss_wasm.wasm').then(response =>
-                response.arrayBuffer()
-            ).then(bytes =>
-                WebAssembly.instantiate(bytes,  {env: {
-        log_j: (num) => document.getElementById("log").textContent += "Depth " + num + "\n",
-        log_str: (str) => document.getElementById("log").textContent += str + "\n",
-      }})
-            ).then(results => {
-              the_thing = results;
-            });
+        <script type="javascript/worker" id="worker">
+          var wasm_mod = null;
+          self.onmessage = function(event) {
+            solve_block(wasm_mod,  event.data);
+          }
+          function solve_block(results, scramble) {
+              self.postMessage(new Date() + "\n");
+           		const encoder = new TextEncoder();
+           		let encodedString = encoder.encode(scramble);
+          
+               const a = results.instance.exports.stringPrepare(encodedString.length);
+               const b = results.instance.exports.stringData(a);
+          
+               const asBytes = new Uint8Array(results.instance.exports.memory.buffer, b, encodedString.length);
+           		asBytes.set(encodedString);
+          
+               const pointer = results.instance.exports.get_string(a);
+          
+               const buffer = new Uint8Array(
+                   results.instance.exports.memory.buffer,
+                   pointer,
+                   results.instance.exports.get_len()
+               );
+               self.postMessage(String.fromCharCode(...buffer));
+               self.postMessage("\n" + new Date() + "\n");
+          }
+          var wasm_file = 'rss_wasm.wasm';
+          fetch(wasm_file).then(response =>
+                          response.arrayBuffer()
+                      ).then(bytes =>
+                          WebAssembly.instantiate(bytes,  {env: {
+                  log_j: (num) => self.postMessage("Depth " + num + "\n"),
+                  log_str: (str) => document.getElementById("log").textContent += str + "\n",
+                }})
+                      ).then(results => {
+                        wasm_mod = results;
+          
+               console.time("transition table");
+               results.instance.exports.init_tables();
+               console.timeEnd("transition table");
+               self.postMessage("DONE");
+               });
         </script>
+<script>
+
+var workerBlob = new Blob(
+    [document.getElementById("worker").textContent],
+    { type:'text/javascript' }
+  );
+
+var workerBlobUrl = URL.createObjectURL(workerBlob);
+var worker = new Worker(workerBlobUrl);
+
+worker.onmessage = function(event) {
+  if (event.data == "DONE"){
+    document.getElementById("solve_button").disabled = false;
+    document.getElementById("log").textContent = "";
+    return;
+  }
+  document.getElementById("log").textContent += event.data;
+};
+</script>
     </head>
 <body>
 <input type="text" size="100" id="scramble"></input>
-<input type="button" value="Solve DL" onclick="document.getElementById('log').textContent='';solve_block(the_thing, document.getElementById('scramble').value)"></input>
+<input type="button" value="Solve DL" id="solve_button" disabled onclick="document.getElementById('log').textContent='';worker.postMessage(document.getElementById('scramble').value);"></input>
 <br />
-<textarea rows="10" cols="80" id="log"></textarea>
+<textarea rows="10" cols="80" id="log">LOADING...</textarea>
 </body>
 </html>
