@@ -11,6 +11,7 @@
         <title>wasm-string</title>
         <script type="javascript/worker" id="worker">
           var wasm_mod = null;
+          var stack = [];
           self.onmessage = function(event) {
             solve_block(wasm_mod,  event.data);
           }
@@ -30,7 +31,7 @@
                const buffer = new Uint8Array(
                    results.instance.exports.memory.buffer,
                    pointer,
-                   results.instance.exports.get_len()
+                   stack.pop()
                );
                self.postMessage(String.fromCharCode(...buffer));
                self.postMessage("\n" + new Date() + "\n");
@@ -41,7 +42,7 @@
                       ).then(bytes =>
                           WebAssembly.instantiate(bytes,  {env: {
                   log_j: (num) => self.postMessage("Depth " + num + "\n"),
-                  log_str: (str) => document.getElementById("log").textContent += str + "\n",
+                  stack_push: (val) => stack.push(val),
                 }})
                       ).then(results => {
                         wasm_mod = results;
@@ -68,7 +69,7 @@ worker.onmessage = function(event) {
     document.getElementById("log").textContent = "";
     return;
   }
-  document.getElementById("log").textContent += event.data;
+  document.getElementById("log").innerHTML += event.data;
 };
 </script>
     </head>
@@ -76,6 +77,6 @@ worker.onmessage = function(event) {
 <input type="text" size="100" id="scramble"></input>
 <input type="button" value="Solve DL" id="solve_button" disabled onclick="document.getElementById('log').textContent='';worker.postMessage(document.getElementById('scramble').value);"></input>
 <br />
-<textarea rows="15" cols="100" id="log">LOADING...</textarea>
+<div rows="15" cols="100" id="log">LOADING...</div>
 </body>
 </html>
