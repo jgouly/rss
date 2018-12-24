@@ -13,9 +13,9 @@
           var wasm_mod = null;
           var stack = [];
           self.onmessage = function(event) {
-            solve_block(wasm_mod,  event.data);
+            solve_block(wasm_mod,  event.data.scramble, event.data.fb_type, event.data.orientation);
           }
-          function solve_block(results, scramble) {
+          function solve_block(results, scramble, type, orientation) {
               self.postMessage(new Date() + "\n");
            		const encoder = new TextEncoder();
            		let encodedString = encoder.encode(scramble);
@@ -26,7 +26,7 @@
                const asBytes = new Uint8Array(results.instance.exports.memory.buffer, b, encodedString.length);
            		asBytes.set(encodedString);
           
-               const pointer = results.instance.exports.solve(a);
+               const pointer = type == "fb" ? results.instance.exports.solve_fb(a, orientation) : results.instance.exports.solve_square(a, orientation);
           
                const buffer = new Uint8Array(
                    results.instance.exports.memory.buffer,
@@ -71,12 +71,51 @@ worker.onmessage = function(event) {
   }
   document.getElementById("log").innerHTML += event.data;
 };
+function get_block_type() {
+  return document.querySelector('input[name="fb_type"]:checked').value;
+}
+function get_orientations() {
+  var boxes = document.querySelectorAll('input[name="orientation"]');
+  var val = 0;
+  for (var i = 0; i < boxes.length; ++i) { 
+    if (boxes[i].checked) {
+      val = val | (1 << i);
+    }
+  }
+  return val;
+}
 </script>
     </head>
 <body>
 <input type="text" size="100" id="scramble"></input>
-<input type="button" value="Solve DL" id="solve_button" disabled onclick="document.getElementById('log').textContent='';worker.postMessage(document.getElementById('scramble').value);"></input>
+<input type="button" value="Solve DL" id="solve_button" disabled onclick="document.getElementById('log').textContent='';worker.postMessage({scramble: document.getElementById('scramble').value, fb_type: get_block_type(), orientation: get_orientations()});"></input>
 <br />
+<input type="radio" name="fb_type" value="fb" checked="checked">FB</input>
+<input type="radio" name="fb_type" value="fsquare">Square</input>
+<input type="checkbox" name="orientation" value="0" checked="checked">UF</input>
+<input type="checkbox" name="orientation" value="1" checked="checked">FU</input>
+<input type="checkbox" name="orientation" value="2" checked="checked">UL</input>
+<input type="checkbox" name="orientation" value="3" checked="checked">LU</input>
+<input type="checkbox" name="orientation" value="4" checked="checked">UB</input>
+<input type="checkbox" name="orientation" value="5" checked="checked">BU</input>
+<input type="checkbox" name="orientation" value="6" checked="checked">UR</input>
+<input type="checkbox" name="orientation" value="7" checked="checked">RU</input>
+<input type="checkbox" name="orientation" value="8" checked="checked">DF</input>
+<input type="checkbox" name="orientation" value="9" checked="checked">FD</input>
+<input type="checkbox" name="orientation" value="10" checked="checked">DL</input>
+<input type="checkbox" name="orientation" value="11" checked="checked">LD</input>
+<input type="checkbox" name="orientation" value="12" checked="checked">DB</input>
+<input type="checkbox" name="orientation" value="13" checked="checked">BD</input>
+<input type="checkbox" name="orientation" value="14" checked="checked">DR</input>
+<input type="checkbox" name="orientation" value="15" checked="checked">RD</input>
+<input type="checkbox" name="orientation" value="16" checked="checked">FR</input>
+<input type="checkbox" name="orientation" value="17" checked="checked">RF</input>
+<input type="checkbox" name="orientation" value="18" checked="checked">FL</input>
+<input type="checkbox" name="orientation" value="19" checked="checked">LF</input>
+<input type="checkbox" name="orientation" value="20" checked="checked">BL</input>
+<input type="checkbox" name="orientation" value="21" checked="checked">LB</input>
+<input type="checkbox" name="orientation" value="22" checked="checked">BR</input>
+<input type="checkbox" name="orientation" value="23" checked="checked">RB</input>
 <div rows="15" cols="100" id="log">LOADING...</div>
 </body>
 </html>
